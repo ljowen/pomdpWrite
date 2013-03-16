@@ -1,0 +1,344 @@
+\documentclass[12pt,openany,a4paper]{book}
+\usepackage{tocloft}
+\usepackage{graphicx}
+\usepackage{fancyhdr}
+
+\usepackage[T1]{fontenc}
+\usepackage{titlesec, blindtext, color}
+\definecolor{gray75}{gray}{0.75}
+\newcommand{\hsp}{\hspace{20pt}}
+\titleformat{\chapter}[hang]{\Huge\bfseries}{\thechapter\hsp\textcolor{gray75}{|}\hsp}{0pt}{\Huge\bfseries}
+
+%header stuffs
+\setlength{\headheight}{15.2pt}
+\fancyhead{}
+\fancyfoot{}
+\fancyfoot[RO, LE] {\thepage}
+\fancyhead[RE]{ \leftmark}
+\fancyhead[RO]{ \leftmark}
+
+% Number subsections but not subsubsections:
+\setcounter{secnumdepth}{2}
+% Show subsections but not subsubsections in table of contents:
+\setcounter{tocdepth}{2}
+
+\pagestyle{fancy}		% Chapter on left page, Section on right.
+\raggedbottom
+
+\setlength\cftparskip{0pt}
+\setlength\cftbeforechapskip{-2.0pt}
+
+\setlength{\topmargin}		{-5mm}  %  25-5 = 20mm
+\setlength{\oddsidemargin}	{10mm}  % rhs page inner margin = 25+10mm
+\setlength{\evensidemargin}	{0mm}   % lhs page outer margin = 25mm
+\setlength{\textwidth}		{150mm} % 35 + 150 + 25 = 210mm
+\setlength{\textheight}		{240mm} % 
+
+\renewcommand{\baselinestretch}{1.2}	% Looks like 1.5 spacing.
+
+% Stop figure/tables smaller than 3/4 page from appearing alone on a page:
+\renewcommand{\textfraction}{0.25}
+\renewcommand{\topfraction}{0.75}
+\renewcommand{\bottomfraction}{0.75}
+\renewcommand{\floatpagefraction}{0.75}
+
+% THEOREM-LIKE ENVIRONMENTS:
+\newtheorem{defn}	{Definition}	% cf. \dfn for cross-referencing
+\newtheorem{theorem}	{Theorem}	% cf. \thrm for cross-referencing
+\newtheorem{lemma}	{Lemma}		% cf. \lem for cross-referencing
+
+% AIDS TO CROSS-REFERENCING (All take a label as argument):
+\newcommand{\eref}[1] {(\ref{#1})}		% (...)
+\newcommand{\eq}[1]   {Eq.\,(\ref{#1})}		% Eq.~(...)
+\newcommand{\eqs}[2]  {Eqs.~(\ref{#1}) and~(\ref{#2})}
+\newcommand{\dfn}[1]  {Definition~\ref{#1}}	% Definition~...
+\newcommand{\thrm}[1] {Theorem~\ref{#1}}	% Theorem~...
+\newcommand{\lem}[1]  {Lemma~\ref{#1}}		% Lemma~...
+\newcommand{\fig}[1]  {Fig.\,\ref{#1}}		% Fig.~...
+\newcommand{\tab}[1]  {Table~\ref{#1}}		% Table~...
+\newcommand{\chap}[1] {Chapter~\ref{#1}}	% Chapter~...
+\newcommand{\secn}[1] {Section~\ref{#1}}	% Section~...
+\newcommand{\ssec}[1] {Subsection~\ref{#1}}	% Subsection~...
+
+% AIDS TO FORMATTING:
+\newcommand{\teq}[1]	{\mbox{$#1$}}	% in-Text EQuation (unbreakable)
+\newcommand{\qed}	{\hspace*{\fill}$\bullet$}	% end of proof
+
+
+
+\begin{document}
+
+\frontmatter
+% By default, frontmatter has Roman page-numbering (i,ii,...).
+
+\begin{titlepage}
+\renewcommand{\baselinestretch}{1.0}
+\begin{center}
+\begin{figure} [htbp]
+\begin{center}
+\includegraphics[scale=0.2]{uqlogo.png}
+\end{center}
+\end{figure}
+\vspace*{35mm}
+\Huge\bf
+		A POMDP Approach To GPS Based Animal Tracking\\
+		
+\vspace{20mm}
+\large\sl
+		by\\
+		Lawrence Owen
+		\medskip\\
+\rm
+		School of Information Technology and Electrical Engineering,\\
+		University of Queensland.\\
+\vspace{30mm}
+		Submitted for the degree of\\
+		Bachelor of Engineering
+		\smallskip\\
+\normalsize
+		in the division of Computer Systems Engineering
+		\medskip\\
+\large
+		February 2012.		
+\end{center}
+\end{titlepage}
+
+
+
+\newpage
+
+
+% Notice that all \include files are chapters -- a logical division.
+% But not all chapters are \include files; some chapters are short
+% enough to be in-lined in the main file.
+
+
+\newpage
+\tableofcontents
+%\addtocontents{toc}{\protect\setcounter{tocdepth}{1}}
+
+
+
+% If file los.tex begins with ``\chapter{List of Symbols}'':
+% \include{los}
+
+%\cleardoublepage
+
+\mainmatter
+% By default, mainmatter has Arabic page-numbering (1,2,...).
+
+
+% Chapters may be \include files, each beginning with a line like
+%
+%	\chapter{Title of chapter}
+%
+% e.g. if two chapter files were called intro.tex and theory.tex,
+% we would say
+%
+%	\include{intro}
+%	\include{theory}
+
+
+
+\chapter{Background}
+\section{Flying Foxes}
+As a threatened species the migration patterns of flying foxes has long been an area of interest for Australian zoologists concerned with conservation. As a vector for Hendra and Lyssa viruses flying foxes can pose a moderate threat to both humans and livestock, along with reported damage to crops the species is often viewed as a pest by the public, particularly those involved in agriculture. Flying foxes pose a unique challenge in both tracking their movements and estimating population size and distribution in that they:
+\begin{itemize}
+\item are difficult to detect away from known roost sites.
+\item are extraordinarily mobile, with individuals changing camps regularly and capable of moving hundreds of kilometers over periods of days
+\item the distribution appears to respond rapidly to changes in resource distribution with entire camps and regions being colonized or vacated in short periods\cite{csiroff}.
+\end{itemize} 
+With urban areas steadily encroaching on existing roosting sites the level of interaction between humans and flying foxes increases. Recently in Queensland, 2011, Hendra was confirmed in nine locations, resulting in the death of 11 horses\cite{abchendra}. With these events and several similar incidents in recent years there has been a raised concern over the risk of disease posed by flying fox colonies, a concern which in some cases overstates the likelihood of transmission to humans.
+\\
+
+These concerns are being addressed with an increase in monitoring of flying fox populations, more often than not populations are estimated through studies of roosting camps, however the data on population dynamics outside of these sites remains sparse.
+
+\section{Project Aims}
+The aim of this project was to both research the use of POMDP for actively controlling GPS tracking collars and develop a generalised model for animal behaviour and GPS dynamics.  
+
+\section{POMDP}
+Partially Observable Markov Decision Process (POMDP) is a mathematical model for making decisions in a domain with uncertain dynamics. POMDP is an extension of Markov Decision Process, a framework named after Andrey Markov, which defines a set of states, actions and transitional probabilities: the chance of successive states given the current state and an action. POMDP expands on this model by introducing an uncertainty on the current, that is, an observation model which maps a determined state to a probabilistic belief.
+As a model, by including uncertainty in sensory stimuli, POMDP maps well to many real situations, for example a mobile robot planning movement in an environment where there is uncertainty in both its actuators (i.e motors) and sensors (i.e rangefinders).
+ POMDP has enjoyed success in the field of automation and robotics but can also be utilized for a variety of other problems, including financial decision making, logistics and conservation  \cite{pomdptigers}.
+The components of a POMDP model are described below.
+
+\subsubsection*{Sate Space \emph{S}}
+\noindent The state space consists of a discretized range of all possible states of the system. 
+\\
+For a system with \ensuremath{n} possible states: 
+\ensuremath{ \{ s_{0}, s_{1}, ... ,s_{n-1}, s_{n} \} } 
+
+\subsubsection*{Actions \emph{A}}
+\noindent The set of all possible actions an agent can take:
+\ensuremath{ \{ a_{0},a_{1}, ... ,a_{n} \} } 
+
+
+\subsubsection*{Transitions \emph{T}}
+\noindent The transition model \ensuremath{\Pr(S' | S,a)} defines the probability of transitioning into a new state \ensuremath{S'} given a previous state \ensuremath{S} and an action \ensuremath{a}.
+
+\subsubsection*{Observations \emph{O}}
+\noindent The observations is the set of all phenomena the agent can observe:
+\ensuremath{ \{ o_{0},o_{1}, ... ,o_{n} \} } 
+
+\subsubsection*{Observation Probabilities \emph{\ensuremath{\Omega}}}
+The probability of an observation given a state and an action: \ensuremath{\Omega(o | s',a)}
+
+\subsubsection*{Reward Function \emph{R}}
+The reward or cost associated with taking a particular action in a given state: \ensuremath{R(s,a)}
+
+\section{Methods for solving POMDPS} %%MOVE TO FINAL REPORT?
+In solving POMDP problems, the goal is always to come up with a policy which maximises the reward (or minimises cost) for every possible state. The major downfall of POMDP is the computational complexity involved in reaching a solution: even the fastest algorithms can take \ensuremath{O(c^{n})} time in both state and action space.
+\subsubsection{Value Iteration}
+This technique works by iterating over every possible choice of action to get the best action for a given state (and future states).
+
+\subsubsection{Policy Iteration}
+The policy iteration algorithm works by picking a policy, then calculating
+the utility of each state given that policy\cite{Norvig}. The policy itself is then updated until the total reward converges on some upper bound.
+
+\subsubsection{SARSOP}
+SARSOP is an efficient point based method of approximating an optimal policy. \cite{sarsop}
+
+\section{APPL}
+The Approximate POMDP Planning Toolkit is a C++ implementation of the SARSOP algorithm.  This collection of tools provides both a solver which approximates the best solution to a POMDP problem and several tools for evaluating the output policy. The three main programs provided by APPL are:
+
+\begin{itemize}
+\item {pomdpsol: A solver which uses SARSOP to generate a policy file.}
+\item {pomdpsim: A simulator which runs the path of a policy.}
+\item {pomdpeval: An evaluator which returns the expected total reward of a given policy.}
+\end{itemize}
+
+\chapter{POMDP Model }
+The POMDP model developed combines both GPS characteristics and animal movement.
+Animal movement is simulated with the assignment of probabilities of transitioning between cells on a 2D grid. The GPS model accounts for both measurement uncertainties and variable lock time.
+
+\section{Animal Model}
+The animal model sets a probability on the transitions out of a cell to a neighbouring cell. In keeping the model simple, two types of cells are used: field cells with a uniform probability and resource cells with an increased probability of remaining in same location.
+
+Resource cells are used to simulate both foraging and nesting behaviours.
+
+\begin{figure} [htbp]
+\begin{center}
+\caption{Field Cell}
+\includegraphics[scale=0.5]{grid1.png}
+\end{center}
+\end{figure}
+
+\begin{figure} [htbp]
+\begin{center}
+\caption{Resource Cell}
+\includegraphics[scale=0.5]{grid2.png}
+\end{center}
+\end{figure}
+\subsection*{State Space : S}
+The state space consists of all possible positions of the animal: \\
+\ensuremath{ S :\{s_{00}, s_{01}, s_{10} ... s_{XY}\} }
+
+\subsection*{Transition Model : T}
+The transition model consists of the probabilities associated with moving from one cell to a neighbouring cell: \
+\ensuremath{ T = Pr( s_1 | s_0)  \forall  s  \epsilon S }
+
+\section{GPS Model}
+The GPS model introduces additional state variables to represent the status of the GPS module along with an observation function on the animals position.
+
+\subsection*{Sate Space \emph{S}}
+Four new state variables are introduced:\\
+R : the positional uncertainty (Integer) \\
+LT : locktime, how long the GPS will take to get the next measurement (Integer)\\
+TSL : time since last lock (Integer)\\
+GPS : current status of the GPS module (On or Off)  \\
+The state space becomes:
+
+\ensuremath{ S = \{\{ s_{xy}\} ,\{R_{xy} \} , \{ GPS \} , \{ TSL \}, \{ LT \} \}}
+
+\subsection*{Actions}
+The actions which can be taken are switching the GPS on or off: \\
+\ensuremath{ A : \{on , off \} }
+
+\subsection*{Transition Model}
+The transitions on \ensuremath{ s_{xy}} remain unchanged. \\
+\ensuremath{R_{xy}}  depends on previous position, previous uncertainty and the GPS status:\\
+\ensuremath{T_{R} :} \\
+\ensuremath{R_1 => R_0 + \alpha_s : GPS_{off} }\\
+\indent \ensuremath{R_1 => R_0 - \alpha_s : GPS_{on} }\\
+Where alpha is a fixed amount based on the position.
+
+The transition for GPS is fully observed and  determined by the action:\\
+\ensuremath{T_{GPS} : GPS => GPS_{on} : a = on } \\
+\indent \ensuremath{GPS => GPS_{off} : a = off} \\
+
+TSL grows linearly with time while the GPS is off and resets to 0 when a lock is achieved.
+
+LT depends both on current position S and TSL
+
+\subsection*{Observation Model}
+
+
+\newpage
+\section{Modelling GPS Characteristics}
+Since our goal is to opt for readings with a higher degree of accuracy whilst conserving battery life it is important to consider the factors which influence this.
+
+\subsubsection*{Locking Time}
+Locking time is how long it takes to begin receiving position data after the GPS module has been powered on. Although there is little to no effect on the accuracy of readings, this is an important consideration when considering power consumption. One of the findings of \cite{jurdak} is that the main influence on locking time is the time since the device previously held a lock. Additionally the strength of the received signal and number of satellites overhead can also influence the locking time, though the time since last lock dominates these factors.
+As such two additional state variables can be introduced:\\
+
+\noindent\emph{Time Since Lock (TSL)}: A counter which stores how long since the previous lock.
+
+\noindent\emph{Previous Lock Time (PLT)}: A counter which starts when the unit is activated and stops when the GPS acquires a lock.
+
+\subsubsection*{Error margin}
+Available as both a figure in the raw GPS and data and as a derived measure, this is the amount of error present in a particular reading.
+We can introduce this as either the variance on each reading or a radius of possible values:
+\[ S : \{X_{\sigma}, Y_{\sigma}\}\]
+\[ S : \{X_{r} , Y_{r}\} \]
+
+\chapter{Results}
+To measure the performance of these models we can use the expected reward to gauge how successful the policy is in achieving it's goal.\\
+Each of the results shown below is the averaged total reward over 100 simulations:
+
+\begin{table}[htbp]
+%\begin{center}
+    \begin{tabular}{ | c | r | r |}
+    \hline
+	\textbf{Model } &	\textbf{ Exp Total Reward} & \textbf{One step look ahead} \\ \hline
+	{ 2-State Velocity} & 862.65 & 817.2 \\ \hline
+	 { 2-State Duty Cycle} & 379.769& N/A \\ \hline
+    	{10-State Velocity} & 138.71 & 120.5\\ \hline
+	{ 10-State Duty Cycle} & 116.946 & N/A\\ \hline
+	{5x5-State Position} & 267.02 & 210    \\ \hline
+	{5x5-State Position Duty Cycle} & 183.35 & N/A  \\ \hline
+    \end{tabular}
+\caption{Summary of Results}
+%\end{center}
+\end{table}
+
+As the above figures show, in each instance there is substantial improvement on a fixed duty cycle strategy. These figures do not indicate total battery life but rather the total reward received over the simulation. In the case of the velocity models, this reward is a linear function, with greater velocities having an increased reward. The position model rewards readings taken away from the two camp cells. 
+
+\chapter{Future Work}
+The next step will be to calculate from the simulation paths how long the GPS receiver would be on for and include this in the results. Similarly once a decent model for accuracy on the positional model is included, a measurement of the overall variance in readings will help in assessing the overall performance. A visualisation of both the actual simulated path and recorded positions will added to assist interpreting the policy.\\
+
+A major deficit in the current position model is the random animal movement model which will be supplemented with the cow data.\\
+
+Since this strategy only considers a single animal in it's readings, further improvements to battery life and data integrity through the use of radio communication with other nearby tags. 
+
+
+\chapter{Conclusion}
+The preliminary results are promising and show that certainly improvements can be made on fixed duty cycle through the application of POMDP. Given the scope of modelling both animal movement and GPS dynamics much progress is needed before deploying this strategy on animal sensors.
+
+
+\begin{thebibliography}{99}
+\addcontentsline{toc}{chapter}{Bibliography}
+\bibitem{csiroff} Westcott D, McKeown A, Murph H, Fletcher C, A Monitoring method for the grey-headed flying fox, Pteropus poliocephalus [Online] Available: http://www.environment.gov.au/biodiversity/threatened/species/pubs/310112-monitoring-methodology.pdf
+\bibitem{abchendra} Preez R, The science and mystery of hendra virus [Online] Available: http://www.abc.net.au/news/specials/hendra-virus/
+\bibitem{jurdak} Jurdak R, Energy-efficient Localisation: GPS Duty Cycling with Radio Ranging [Online] Available: http://jurdak.com/tosn12.pdf
+
+\bibitem{sarsop}H. Kurniawati, D, Hsu, and W.S. Lee, SARSOP: Efficient point-based POMDP planning by approximating optimally reachable belief spaces. In Proc. Robotics: Science and Systems, 2008. 
+
+\bibitem{brill} Brillenger D, Simulating Constrained Animal Motion Using Stochastic Differential Equations. [Online] Available: http://www.stat.berkeley.edu/~brill/Papers/rabi9.pdf
+
+\bibitem{pomdptigers} Chadès I, McDonald-Madden E., McCarthy M.A., Wintle B., Linkie M., Possingham H.P. (16 September 2008). "When to stop managing or surveying cryptic threatened species"
+
+\bibitem{Norvig} Norvig P, Russel S, Artificial Intelligence: A Modern Approach
+
+\end{thebibliography}
+
+\end{document}
