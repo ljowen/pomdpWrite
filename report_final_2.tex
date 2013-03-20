@@ -2,7 +2,7 @@
 \usepackage{tocloft}
 \usepackage{graphicx}
 \usepackage{fancyhdr}
-
+\usepackage{amsmath}
 \usepackage[T1]{fontenc}
 \usepackage{titlesec, blindtext, color}
 \definecolor{gray75}{gray}{0.75}
@@ -157,8 +157,8 @@ These concerns are being addressed with an increase in monitoring of flying fox 
 The aim of this project was to both research the use of POMDP for actively controlling GPS tracking collars and develop a generalised model for animal behaviour and GPS dynamics.  
 
 \section{POMDP}
-Partially Observable Markov Decision Process (POMDP) is a mathematical model for making decisions in a domain with uncertain dynamics. POMDP is an extension of Markov Decision Process, a framework named after Andrey Markov, which defines a set of states, actions and transitional probabilities: the chance of successive states given the current state and an action. POMDP expands on this model by introducing an uncertainty on the current, that is, an observation model which maps a determined state to a probabilistic belief.
-As a model, by including uncertainty in sensory stimuli, POMDP maps well to many real situations, for example a mobile robot planning movement in an environment where there is uncertainty in both its actuators (i.e motors) and sensors (i.e rangefinders).
+The Partially Observable Markov Decision Process (POMDP) is a mathematical model for making decisions in a domain with uncertain dynamics. POMDP is an extension of Markov Decision Process, a framework named after Andrey Markov, which defines a set of states, actions and transitional probabilities: the chance of successive states given the current state and an action. POMDP expands on this model by introducing an uncertainty on the current state of the system, that is, an observation model which maps an state to a probabilistic belief.
+As a model, by including uncertainty in sensory stimuli, POMDP suits many real world situations, for example a mobile robot planning movement in an environment where there is uncertainty in both its actuators (i.e motors) and sensors (i.e rangefinders).
  POMDP has enjoyed success in the field of automation and robotics but can also be utilized for a variety of other problems, including financial decision making, logistics and conservation  \cite{pomdptigers}.
 The components of a POMDP model are described below.
 
@@ -218,112 +218,137 @@ Resource cells are used to simulate both foraging and nesting behaviours.
 
 \begin{figure} [htbp]
 \begin{center}
-\caption{Field Cell}
+\caption{Field Cell Movement Transitions}
 \includegraphics[scale=0.5]{grid1.png}
 \end{center}
 \end{figure}
 
 \begin{figure} [htbp]
 \begin{center}
-\caption{Resource Cell}
+\caption{Resource Cell Movement Transitions}
 \includegraphics[scale=0.5]{grid2.png}
 \end{center}
 \end{figure}
 \subsection*{State Space : S}
 The state space consists of all possible positions of the animal: \\
-\ensuremath{ S :\{s_{00}, s_{01}, s_{10} ... s_{XY}\} }
+\ensuremath{ S_{C} :\{s_{00}, s_{01}, s_{10} ... s_{XY}\} }
 
 \subsection*{Transition Model : T}
-The transition model consists of the probabilities associated with moving from one cell to a neighbouring cell: \
-\ensuremath{ T = Pr( s_1 | s_0)  \forall  s  \epsilon S }
+The transition model consists of the probabilities associated with moving from one cell to a neighbouring cell (See Figure 2.1, 2.2): \\
+\ensuremath{ T = Pr( s_1 | s_0) \,  \forall \,  s \, \in \, S }
+
+\newpage
 
 \section{GPS Model}
 The GPS model introduces additional state variables to represent the status of the GPS module along with an observation function on the animals position.
 
 \subsection*{Sate Space \emph{S}}
-Four new state variables are introduced:\\
-R : the positional uncertainty (Integer) \\
-LT : locktime, how long the GPS will take to get the next measurement (Integer)\\
-TSL : time since last lock (Integer)\\
-GPS : current status of the GPS module (On or Off)  \\
+Four additional state variables are introduced:
+\begin{itemize}
+\item \ensuremath{S_{R}} : the positional uncertainty (Integer) 
+\item LT : locktime, how long the GPS will take to get the next measurement (Integer)
+\item TSL : time since last lock (Integer)
+\item {GPS : current status of the GPS module (On or Off) } 
+\end{itemize}
 The state space becomes:
 
-\ensuremath{ S = \{\{ s_{xy}\} ,\{R_{xy} \} , \{ GPS \} , \{ TSL \}, \{ LT \} \}}
+\ensuremath{ S = \{ S_{C} ,S_{R}, GPS, TSL, LT \}}
 
 \subsection*{Actions}
 The actions which can be taken are switching the GPS on or off: \\
 \ensuremath{ A : \{on , off \} }
 
-\subsection*{Transition Model}
+\subsection*{Transition Functions} %Trans mark
 The transitions on \ensuremath{ s_{xy}} remain unchanged. \\
-\ensuremath{R_{xy}}  depends on previous position, previous uncertainty and the GPS status:\\
-\ensuremath{T_{R} :} \\
-\ensuremath{R_1 => R_0 + \alpha_s : GPS_{off} }\\
-\indent \ensuremath{R_1 => R_0 - \alpha_s : GPS_{on} }\\
-Where alpha is a fixed amount based on the position.
+\ensuremath{S_{R}}  depends on previous position, previous uncertainty and the GPS status:\\
+  \begin{equation}
+    S_{R}(1)=
+    \begin{cases}
+      S_{R}(0) + \alpha_s  , & \text{if}\ a={off} \\
+      S_{R}(0) - \alpha_s  , & \text{if}\ a={on} \\
+    \end{cases}
+  \end{equation}
 
-The transition for GPS is fully observed and  determined by the action:\\
-\ensuremath{T_{GPS} : GPS => GPS_{on} : a = on } \\
-\indent \ensuremath{GPS => GPS_{off} : a = off} \\
+Where alpha is a fixed amount based on the position.\\
 
-TSL grows linearly with time while the GPS is off and resets to 0 when a lock is achieved.
+\noindent The transition for GPS is fully observed and  determined by the action:\\
+  \begin{equation}
+   {GPS} = 
+  \begin{cases}
+   GPS_{off}, & \text{if}\ a={off} \\
+   GPS_{off}, & \text{if}\ a={on} \\
+  \end{cases}
+\end{equation}
 
-LT depends both on current position S and TSL
+\noindent TSL grows linearly with time while the GPS is off and resets to 0 when a lock is achieved:
 
-\subsection*{Observation Model}
+  \begin{equation}
+   TSL(1) = 
+  \begin{cases}
+   TSL(0) + 1, & \text{if}\ GPS={GPS_{off}} \\
+   0, & \text{if}\ GPS \text{ has lock} \\
+  \end{cases}
+\end{equation}
 
+\noindent LT depends both on current position \ensuremath{S_C} and TSL:\\
+\ensuremath{L = a * TSL + N}\\
+  \begin{equation}
+   LT(1) = 
+  \begin{cases}
+   aLT(0) + N, & \text{if}\ TSL > 0 \\
+   c & \text{if}\  TSL = 0 \\
+  \end{cases}
+\end{equation}
+Where N is a random variable dependent on position s, a and c are both constant.
 
-\newpage
-\section{Modelling GPS Characteristics}
-Since our goal is to opt for readings with a higher degree of accuracy whilst conserving battery life it is important to consider the factors which influence this.
+\subsection*{Observations}
+Majority of the state variables are fully observed, with updates to \ensuremath{S_{C}} only being available when the GPS has achieved lock (\ensuremath{TSL = 0}).
 
-\subsubsection*{Locking Time}
-Locking time is how long it takes to begin receiving position data after the GPS module has been powered on. Although there is little to no effect on the accuracy of readings, this is an important consideration when considering power consumption. One of the findings of \cite{jurdak} is that the main influence on locking time is the time since the device previously held a lock. Additionally the strength of the received signal and number of satellites overhead can also influence the locking time, though the time since last lock dominates these factors.
-As such two additional state variables can be introduced:\\
+\noindent The lock time LT is the only partially observable variable, when a lock is achieved, the time taken is used to update the belief of subsequent lock times:
 
-\noindent\emph{Time Since Lock (TSL)}: A counter which stores how long since the previous lock.
+\ensuremath{ Pr(LT)}
 
-\noindent\emph{Previous Lock Time (PLT)}: A counter which starts when the unit is activated and stops when the GPS acquires a lock.
+\subsection*{Reward Function}
+The reward R, is a function of both the positional error, R, and the current state of the GPS:
 
-\subsubsection*{Error margin}
-Available as both a figure in the raw GPS and data and as a derived measure, this is the amount of error present in a particular reading.
-We can introduce this as either the variance on each reading or a radius of possible values:
-\[ S : \{X_{\sigma}, Y_{\sigma}\}\]
-\[ S : \{X_{r} , Y_{r}\} \]
+\ensuremath{R = f(S_R) - C(GPS_{on}) }
 
-\chapter{Results}
-To measure the performance of these models we can use the expected reward to gauge how successful the policy is in achieving it's goal.\\
-Each of the results shown below is the averaged total reward over 100 simulations:
-
-\begin{table}[htbp]
-%\begin{center}
-    \begin{tabular}{ | c | r | r |}
-    \hline
-	\textbf{Model } &	\textbf{ Exp Total Reward} & \textbf{One step look ahead} \\ \hline
-	{ 2-State Velocity} & 862.65 & 817.2 \\ \hline
-	 { 2-State Duty Cycle} & 379.769& N/A \\ \hline
-    	{10-State Velocity} & 138.71 & 120.5\\ \hline
-	{ 10-State Duty Cycle} & 116.946 & N/A\\ \hline
-	{5x5-State Position} & 267.02 & 210    \\ \hline
-	{5x5-State Position Duty Cycle} & 183.35 & N/A  \\ \hline
-    \end{tabular}
-\caption{Summary of Results}
-%\end{center}
-\end{table}
-
-As the above figures show, in each instance there is substantial improvement on a fixed duty cycle strategy. These figures do not indicate total battery life but rather the total reward received over the simulation. In the case of the velocity models, this reward is a linear function, with greater velocities having an increased reward. The position model rewards readings taken away from the two camp cells. 
-
-\chapter{Future Work}
-The next step will be to calculate from the simulation paths how long the GPS receiver would be on for and include this in the results. Similarly once a decent model for accuracy on the positional model is included, a measurement of the overall variance in readings will help in assessing the overall performance. A visualisation of both the actual simulated path and recorded positions will added to assist interpreting the policy.\\
-
-A major deficit in the current position model is the random animal movement model which will be supplemented with the cow data.\\
-
-Since this strategy only considers a single animal in it's readings, further improvements to battery life and data integrity through the use of radio communication with other nearby tags. 
+\noindent Where f is a function mapping smaller values of \ensuremath{S_R} to larger rewards and C is some constant cost associated with having the GPS active.
 
 
-\chapter{Conclusion}
-The preliminary results are promising and show that certainly improvements can be made on fixed duty cycle through the application of POMDP. Given the scope of modelling both animal movement and GPS dynamics much progress is needed before deploying this strategy on animal sensors.
-
+%\chapter{Results}
+%To measure the performance of these models we can use the expected reward to gauge how successful the policy is in achieving it's goal.\\
+%Each of the results shown below is the averaged total reward over 100 simulations:
+%
+%\begin{table}[htbp]
+%%\begin{center}
+%    \begin{tabular}{ | c | r | r |}
+%    \hline
+%	\textbf{Model } &	\textbf{ Exp Total Reward} & \textbf{One step look ahead} \\ \hline
+%	{ 2-State Velocity} & 862.65 & 817.2 \\ \hline
+%	 { 2-State Duty Cycle} & 379.769& N/A \\ \hline
+%    	{10-State Velocity} & 138.71 & 120.5\\ \hline
+%	{ 10-State Duty Cycle} & 116.946 & N/A\\ \hline
+%	{5x5-State Position} & 267.02 & 210    \\ \hline
+%	{5x5-State Position Duty Cycle} & 183.35 & N/A  \\ \hline
+%    \end{tabular}
+%\caption{Summary of Results}
+%%\end{center}
+%\end{table}
+%
+%As the above figures show, in each instance there is substantial improvement on a fixed duty cycle strategy. These figures do not indicate total battery life but rather the total reward received over the simulation. In the case of the velocity models, this reward is a linear function, with greater velocities having an increased reward. The position model rewards readings taken away from the two camp cells. 
+%
+%\chapter{Future Work}
+%The next step will be to calculate from the simulation paths how long the GPS receiver would be on for and include this in the results. Similarly once a decent model for accuracy on the positional model is included, a measurement of the overall variance in readings will help in assessing the overall performance. A visualisation of both the actual simulated path and recorded positions will added to assist interpreting the policy.\\
+%
+%A major deficit in the current position model is the random animal movement model which will be supplemented with the cow data.\\
+%
+%Since this strategy only considers a single animal in it's readings, further improvements to battery life and data integrity through the use of radio communication with other nearby tags. 
+%
+%
+%\chapter{Conclusion}
+%The preliminary results are promising and show that certainly improvements can be made on fixed duty cycle through the application of POMDP. Given the scope of modelling both animal movement and GPS dynamics much progress is needed before deploying this strategy on animal sensors.
+%
 
 \begin{thebibliography}{99}
 \addcontentsline{toc}{chapter}{Bibliography}
