@@ -1,5 +1,5 @@
 #import numpy as np;
-import random as rnd;
+
 validDirs = ("pn","pne","pe","pse","ps","psw","pw","pnw","p0");
 validCross = ("pn","pe","ps","pw");
 validDiag = ("pne","pse","psw","pnw");
@@ -62,10 +62,10 @@ class AreaPoint:
 			self.pr[i] = 0;
 		
 	def is_valid(self):
-		sump = 0;
+		sum = 0;
 		for i in validDirs:
-			sump += self.pr[i];
-		if(sump == 1):
+			sum += self.pr[i];
+		if(sum == 1):
 			return True;
 		else:
 			return False;
@@ -99,15 +99,6 @@ class Area:
 		self.points[0,ydim-1].set_even("pnw");
 		self.points[xdim-1,0].set_even("pse");
 		self.points[xdim-1,ydim-1].set_even("pne");
-		
-	def set_res_random(self, numRes):
-		for i in range(numRes):
-			newResX =1;
-			newResY =1;
-			while(newResX > 0 and newResX < self.xdim-1 and newResY > 0 and newResY < self.ydim-1 ):
-				newResX = rnd.randint(0,self.xdim);
-				newResY = rnd.randint(0,self.ydim);
-				self.points[newResX,newResY].set_res(False);
 	
 	def validate(self):
 		for i in range(0,self.xdim):
@@ -135,54 +126,6 @@ class Area:
 			retStr += "|\r\n";
 		retStr += "-" * (self.xdim+2) + "\r\n";
 		return retStr;
-	
-	def is_edge(self,x,y):
-		if(x == 0): 
-			return True;
-		elif(y == 0):
-			return True;
-		elif(x == (self.xdim -1)):
-			return True;
-		elif(y == (self.ydim -1)):
-			return True;
-		return False;
-	
-	def is_outside(self,x,y):
-		if(x < 0): 
-			return True;
-		elif(y < 0):
-			return True;
-		elif(x > (self.xdim -1)):
-			return True;
-		elif(y > (self.ydim -1)):
-			return True;
-		return False;
-	
-	def get_dir_add(self,direction):
-		if(direction == "pn"):
-			return (1,0);
-		if(direction == "pne"):
-			return (1,1);
-		if(direction == "pe"):
-			return (0,1);
-		if(direction == "pse"):
-			return (1,-1);
-		if(direction == "ps"):
-			return (0,-1);
-		if(direction == "psw"):
-			return (-1,-1);
-		if(direction == "pw"):
-			return (-1,0);
-		if(direction == "pnw"):
-			return (-1,1);
-		else:
-			return (0,0);
-		
-	def get_neighbour(self,x,y,direction):
-		modifier = self.get_dir_add(direction);
-		return(x+modifier[0], y+modifier[1]);
-		
-		
 	
 	
 def make_ten():
