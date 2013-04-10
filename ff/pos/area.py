@@ -44,6 +44,7 @@ class AreaPoint:
 					
 	def set_res(self,edge):
 		self.set_zero();
+		self.res = True;
 		if(edge == False):
 			for allowed in validDirs:
 				self.pr[allowed] = 0.5/9;
@@ -75,8 +76,6 @@ class AreaPoint:
 	
 
 class Area:
-	def __init__(self):
-		self.points = {};	
 		
 	def __init__(self,xdim,ydim):
 		self.points = {};
@@ -105,8 +104,8 @@ class Area:
 			newResX =1;
 			newResY =1;
 			while(newResX > 0 and newResX < self.xdim-1 and newResY > 0 and newResY < self.ydim-1 ):
-				newResX = rnd.randint(0,self.xdim);
-				newResY = rnd.randint(0,self.ydim);
+				newResX = rnd.randint(0,self.xdim-1);
+				newResY = rnd.randint(0,self.ydim-1);
 				self.points[newResX,newResY].set_res(False);
 	
 	def validate(self):
@@ -128,7 +127,7 @@ class Area:
 		for y in range(self.ydim-1, -1, -1):
 			retStr += "|";
 			for x in range(0, self.xdim):
-				if(self[x,y].pr["p0"] >= 0.4):
+				if(self[x,y].res == True):
 					retStr += "#";
 				else:
 					retStr += ".";
@@ -160,11 +159,11 @@ class Area:
 	
 	def get_dir_add(self,direction):
 		if(direction == "pn"):
-			return (1,0);
+			return (0,1);
 		if(direction == "pne"):
 			return (1,1);
 		if(direction == "pe"):
-			return (0,1);
+			return (1,0);
 		if(direction == "pse"):
 			return (1,-1);
 		if(direction == "ps"):
