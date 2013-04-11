@@ -14,15 +14,16 @@ validMoves = {
 				"pw" : ("pn","pne","pe","pse","ps"),
 				"pnw" : ("pe","pse","ps")
 				}; 
-
+ltMAX=9;
+ltMIN=0;
 class AreaPoint:
 	
-	def __init__(self,x,y,res,edge): 
+	def __init__(self,x,y,res,edge,lt): 
 		self.x = x;
 		self.y = y;
 		self.res = res;
 		self.pr = {"pn":0,"pne":0,"pe":0,"pse":0,"ps":0,"pse":0,"ps":0,"psw":0,"pw":0,"pnw":0};
-
+		self.lt = lt;
 		if(res == True):
 			self.set_res(edge);
 		else:
@@ -70,9 +71,12 @@ class AreaPoint:
 			return True;
 		else:
 			return False;
+		
+	def set_lt(self,lt):
+		self.lt = lt;
 	
 	def __str__(self):
-		return self.pr.__str__();
+		return "PR: " + self.pr.__str__() + " LT: " + repr(self.lt);
 	
 
 class Area:
@@ -84,15 +88,16 @@ class Area:
 		for i in range(0,xdim):
 			for j in range(0,ydim):
 				if(i == 0):
-					self.points[i,j] = AreaPoint(i,j,False,"pw");
+					self.points[i,j] = AreaPoint(i,j,False,"pw",0);
 				elif(i == xdim-1):
-					self.points[i,j] = AreaPoint(i,j,False,"pe");
+					self.points[i,j] = AreaPoint(i,j,False,"pe",0);
 				elif(j == 0):
-					self.points[i,j] = AreaPoint(i,j,False,"ps");
+					self.points[i,j] = AreaPoint(i,j,False,"ps",0);
 				elif(j == ydim-1):
-					self.points[i,j] = AreaPoint(i,j,False,"pn");
+					self.points[i,j] = AreaPoint(i,j,False,"pn",0);
 				else:
-					self.points[i,j] = AreaPoint(i,j,False,False);
+					self.points[i,j] = AreaPoint(i,j,False,False,0);
+				self.points[i,j].lt = rnd.randint(0,ltMAX);
 				
 		self.points[0,0].set_even("psw");
 		self.points[0,ydim-1].set_even("pnw");
@@ -180,7 +185,43 @@ class Area:
 	def get_neighbour(self,x,y,direction):
 		modifier = self.get_dir_add(direction);
 		return(x+modifier[0], y+modifier[1]);
-		
+	
+	def get_numcells_pr(self,x,y,Pr):
+		totalCells = 0;
+		for i in range(x - Pr, x + Pr+1):
+			for j in range(y - Pr, y + Pr+1): # For each position
+				if(self.is_outside(i,j) == False):
+					totalCells += 1;
+		return totalCells;
+	
+	def get_ELT(self,x,y,Pr):
+		outDic = {};
+		prStr = "";
+#		totalCells = (2*Pr + 1) ** 2;
+		totalCells = self.get_numcells_pr(x,y,Pr);
+		prSum = 0;
+		for lt_val in range(ltMIN,ltMAX+1): # For each value of LT
+			lt_sum = 0;
+			for i in range(x - Pr, x + Pr+1):
+				for j in range(y - Pr, y + Pr+1): # For each position
+					if(self.is_outside(i,j) == False):# if pos valid
+					#	if(lt_val == ltMIN):
+					#		print "i"+repr(i) + " j"+repr(j);
+						
+						if (self.points[i,j].lt == lt_val):#if lt matches
+							#print "at " +repr(i) + " " + repr(j) + ": " + repr(lt_val);
+							lt_sum += 1;
+			outDic[lt_val] = float(lt_sum)/totalCells ;
+			if(lt_val < ltMAX):
+				prStr += repr(outDic[lt_val]) + " ,";
+			else:
+				prStr += repr(outDic[lt_val]); 
+			prSum += outDic[lt_val];
+		outDic["Total"] = totalCells;	
+		outDic["Prsum"] = prSum;
+		outDic["PrStr"] = prStr;
+		return outDic;
+	
 		
 	
 	
@@ -189,3 +230,12 @@ def make_ten():
 	a[6,1].set_res(False);
 	a[2,7].set_res(False);
 	return a;
+
+def str_index(dic):
+	a = dic.values();
+	outStr = "";
+	for i in a:
+		outStr += repr(i) + " ";
+	return outStr;
+		
+	
