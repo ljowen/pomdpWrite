@@ -14,8 +14,9 @@ validMoves = {
 				"pw" : ("pn","pne","pe","pse","ps"),
 				"pnw" : ("pe","pse","ps")
 				}; 
-ltMAX=9;
+ltMAX=5;
 ltMIN=0;
+resProb = 0.55;
 class AreaPoint:
 	
 	def __init__(self,x,y,res,edge,lt): 
@@ -48,16 +49,18 @@ class AreaPoint:
 		self.res = True;
 		if(edge == False):
 			for allowed in validDirs:
-				self.pr[allowed] = 0.5/9;
-				self.pr["p0"] = 0.5;
+				self.pr[allowed] = (1-resProb)/8;
+			self.pr["p0"] = resProb;
+			
 		elif(edge in validCross):
 			for allowed in validMoves[edge]:
-				self.pr[allowed] = 0.5/5;
-				self.pr["p0"] = 0.5;
+				self.pr[allowed] = (1-resProb)/5;
+			self.pr["p0"] = resProb;
+			
 		elif(edge in validDiag):
 			for allowed in validMoves[edge]:
-				self.pr[allowed] = 1.0/3;
-				self.pr["p0"] = 0.5;
+				self.pr[allowed] = (1-resProb)/3;
+			self.pr["p0"] = resProb;
 	
 	def set_zero(self):
 		for i in validDirs:
@@ -213,7 +216,7 @@ class Area:
 							lt_sum += 1;
 			outDic[lt_val] = float(lt_sum)/totalCells ;
 			if(lt_val < ltMAX):
-				prStr += repr(outDic[lt_val]) + " ,";
+				prStr += repr(outDic[lt_val]) + " ";
 			else:
 				prStr += repr(outDic[lt_val]); 
 			prSum += outDic[lt_val];

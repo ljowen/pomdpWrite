@@ -26,15 +26,20 @@ for i in range(myLand.xdim):
 	for j in range(myLand.ydim):
 		Pc_enum += " Pc"+repr(i)+"_" +repr(j) + " ";
 		myLand[i,j];
+		fsum = 0; # Float sum to check pr adds to 1
+		#doneAdd = False;
 		for dirn in a.validDirs:
 			adj = myLand.get_neighbour(i, j, dirn);
 			if(myLand.is_outside(adj[0],adj[1]) == False):
+				fsum += float(repr(myLand[i,j].pr[dirn]));
 				Pc_trans += """
 				<Entry>
 				<Instance>"""+"Pc"+repr(i)+"_"+repr(j)+" Pc"+repr(adj[0])+"_"+repr(adj[1])+""" </Instance> 
 				<ProbTable>""" + repr(myLand[i,j].pr[dirn]) + """</ProbTable>
 				</Entry>
 				"""
+		#if(fsum != 1):
+		#	print "float is " + repr(fsum) + " rem: " + repr(1-fsum);
 Pc_trans += """</Parameter>
 				</CondProb>""";
 '''
@@ -42,7 +47,7 @@ Pc_trans += """</Parameter>
 '''
 
 Pr_min = 0; #lowest possible error 0 means we are 100% certain of Pc
-Pr_max = 4# myLand.xdim ; #largest possible error
+Pr_max = 5# myLand.xdim ; #largest possible error
 Pr_enum = "";
 print "Pr Range: " + repr(Pr_min) + " to " + repr(Pr_max);
 Pr_trans = """
@@ -53,46 +58,28 @@ Pr_trans = """
 """;
 
 
-for i in range(Pr_min, Pr_max):
+for i in range(Pr_min, Pr_max+1):
 	Pr_enum += " Pr" + repr(i) + " ";
-	if(i > Pr_min): 
-		Pr_trans += """
-			<Entry>
-			<Instance>LOCK """ + "Pr" + repr(i) + " Pr" + repr(i-1) + """</Instance>
-			<ProbTable> 1 </ProbTable>
-			</Entry>
-		""";
-	else: # Min error, remain stationary 
-		Pr_trans += """
-			<Entry>
-			<Instance>LOCK """ + "Pr" + repr(i) + " Pr" + repr(i) + """</Instance>
-			<ProbTable> 1 </ProbTable>
-			</Entry>
-		""";
 	if(i < Pr_max - 1):
 		Pr_trans += """
 			<Entry>
-			<Instance>ON """ + "Pr" + repr(i) + " Pr" + repr(i+1) + """</Instance>
-			<ProbTable> 1 </ProbTable>
+			<Instance>- """ + "Pr" + repr(i) + " Pr" + repr(i+1) + """</Instance>
+			<ProbTable> 1 1 0 </ProbTable>
 			</Entry>
 		""";
-		Pr_trans += """
-			<Entry>
-			<Instance>OFF """ + "Pr" + repr(i) +" Pr" + repr(i+1) + """</Instance>
-			<ProbTable> 1 </ProbTable>
-			</Entry>
-		""";
+
 	else: #Max error remain stationary
 		Pr_trans += """
 			<Entry>
-			<Instance>ON """ + "Pr" + repr(i) + " Pr" + repr(i) + """</Instance>
-			<ProbTable> 1 </ProbTable>
+			<Instance> - """ + "Pr" + repr(i) + " Pr" + repr(i) + """</Instance>
+			<ProbTable> 1 1 0 </ProbTable>
 			</Entry>
 		""";
-		Pr_trans += """
+		# On Lock -> goto min
+Pr_trans += """
 			<Entry>
-			<Instance>OFF """ + "Pr" + repr(i) +" Pr" + repr(i) + """</Instance>
-			<ProbTable> 1 </ProbTable>
+			<Instance>- """ + "*" +" Pr" + repr(Pr_min) + """</Instance>
+			<ProbTable> 0 0 1 </ProbTable>
 			</Entry>
 		""";
 Pr_trans += """</Parameter>
@@ -111,47 +98,37 @@ GPSstat_trans = """
 """;
 GPSstat_max = 5; # Max time we can record before GPS gets a lock
 GPSstat_min = -5; # Min locking time 1 -> 1 timestep from action_on
+print "GPSstat range: " + repr(GPSstat_min) + " to " + repr(GPSstat_max); 
 for i in range(GPSstat_min,GPSstat_max + 1):
 	GPSstat_enum += ' GPSstat_' + repr(i) + ' ';
-	if((i + 1) < GPSstat_max): ## Increases if ON
+	if(i  < GPSstat_max): ## Increases if ON
 		GPSstat_trans += """
 				<Entry>
-				<Instance>OFF """ + 'GPSstat_'+repr(i) + " GPSstat_"+repr(i+1)+"""</Instance>
-				<ProbTable> 0 </ProbTable> 
+				<Instance> - """ + 'GPSstat_'+repr(i) + " GPSstat_"+repr(i+1)+"""</Instance>
+				<ProbTable> 1 0 0  </ProbTable> 
 				</Entry>
 				"""; 
-		GPSstat_trans += """
-				<Entry>
-				<Instance>ON """ + 'GPSstat_'+repr(i) + " GPSstat_"+repr(i+1)+"""</Instance>
-				<ProbTable> 1 </ProbTable> 
-				</Entry>
-				""";               
-	elif(i > GPSstat_min + 1): ## Decreases if Off
+	if(i > GPSstat_min): ## Decreases if Off
 		GPSstat_trans += """
                 <Entry>
-                <Instance>OFF """ + 'GPSstat_'+repr(i) + " GPSstat_"+repr(i-1)+"""</Instance>
-                <ProbTable> 1 </ProbTable> 
+                <Instance> - """ + 'GPSstat_'+repr(i) + " GPSstat_"+repr(i-1)+"""</Instance>
+                <ProbTable> 0 1 0 </ProbTable> 
                 </Entry>
                 """; 
-		GPSstat_trans += """
-                <Entry>
-                <Instance>ON """ + 'GPSstat_'+repr(i) + " GPSstat_"+repr(i-1)+"""</Instance>
-                <ProbTable> 0 </ProbTable> 
-                </Entry>
-                """; 
-	else: ## If at max remains the same
+	if(i == GPSstat_max): ## If at max remains the same
 		GPSstat_trans += """
 				<Entry>
-				<Instance>OFF """ + 'GPSstat_'+repr(i) + " GPSstat_"+repr(i)+"""</Instance>
-				<ProbTable> 1 </ProbTable> 
+				<Instance> - """ + 'GPSstat_'+repr(i) + " GPSstat_"+repr(i)+"""</Instance>
+				<ProbTable> 1 0 0 </ProbTable> 
 				</Entry>
-				"""; 
+				""";
+	if(i == GPSstat_min): ## If at Min and off remain stationary 
 		GPSstat_trans += """
 				<Entry>
-				<Instance>ON """ + 'GPSstat_'+repr(i) + " GPSstat_"+repr(i)+"""</Instance>
-				<ProbTable> 1 </ProbTable> 
+				<Instance> - """ + 'GPSstat_'+repr(i) + " GPSstat_"+repr(i)+"""</Instance>
+				<ProbTable> 0 1 0 </ProbTable> 
 				</Entry>
-				"""; 
+				""";
 # RESETS to 0 if lock
 GPSstat_trans += """ 
 				<Entry>
@@ -165,11 +142,11 @@ GPSstat_trans += """</Parameter>
 
 ''' DEFINE TRANSITION FOR LT '''
 LT_enum = "";
-LT_obs_enum = "";
+LT_obs_enum = "oLT_none ";
 LT_min = 0;
-LT_max = GPSstat_max + abs(GPSstat_min);
+LT_max = GPSstat_max;
 print "LT range: " + repr(LT_min) + " to " + repr(LT_max);
-for i in range(0,(GPSstat_max + abs(GPSstat_min))):
+for i in range(LT_min,LT_max+1):
 	LT_enum += " LT_"+repr(i)+" ";
 	LT_obs_enum += " oLT_" + repr(i) + " ";
 
@@ -177,7 +154,7 @@ for i in range(0,(GPSstat_max + abs(GPSstat_min))):
 LT_trans = """
 		<CondProb>
 		<Var>LT_now</Var>
-		<Parent>Pc_now </Parent>
+		<Parent>Pc_prev </Parent>
 		<Parameter type = "TBL">""";
 for i in range(myLand.xdim):
 	for j in range(myLand.ydim):
@@ -195,23 +172,107 @@ LT_trans += """</Parameter>
 LT_obs_func = """
 <CondProb>
 <Var>LT_obs</Var>
-<Parent>LT_now Pc_now  Pr_now</Parent>
+<Parent>GPS_now Pc_now Pr_now</Parent>
 <Parameter type="TBL">""";
 
 for i in range(myLand.xdim):
 	for j in range(myLand.ydim):
-		for k in range(Pr_min,Pr_max):
-			for l in range(LT_min,LT_max):
+		for k in range(Pr_min,Pr_max+1):
+		#	for l in range(LT_min,LT_max):
 				ltdic = myLand.get_ELT(i,j,k);
 				LT_obs_func += """
 				<Entry>
-				<Instance>""" + "-" + " Pc"+repr(i)+"_"+repr(j)+" Pr"+repr(k)+" oLT_"+repr(l) + """</Instance>
-				<ProbTable>""" + myLand.get_ELT(i, j, k)["PrStr"] + """</ProbTable>
+				<Instance>""" + " LOCK " +" Pc"+repr(i)+"_"+repr(j)+" Pr"+repr(k)+" -"+ """</Instance>
+				<ProbTable> 0  """ + myLand.get_ELT(i, j, k)["PrStr"] + """</ProbTable>
 				</Entry>"""
-				
+
+LT_obs_func += """
+				<Entry>
+				<Instance>""" + " ON " +"* " + " * "  + " oLT_none " + """</Instance>
+				<ProbTable>""" + "1" + """</ProbTable>
+				</Entry>"""
+LT_obs_func += """
+				<Entry>
+				<Instance>""" + " OFF " +"* " + " * "  + " oLT_none " + """</Instance>
+				<ProbTable>""" + "1" + """</ProbTable>
+				</Entry>"""
+
 LT_obs_func += """
 </Parameter>
 </CondProb> """
+
+''' DEFINE GPS action transitions'''
+GPS_enum = "ON OFF LOCK";
+
+
+GPS_trans = """
+	  <CondProb>
+		  <Var>GPS_now</Var>
+		  <Parent>action_agent LT_prev GPSstat_prev GPS_prev  </Parent>
+		  <Parameter type = "TBL">
+			  <Entry>
+				   <Instance>a_ON * * ON ON</Instance>
+				   <ProbTable>1</ProbTable>
+			  </Entry>
+			  <Entry>
+				   <Instance>a_ON * * OFF ON</Instance>
+				   <ProbTable>1</ProbTable>
+			  </Entry>
+			  <Entry>
+				   <Instance>a_OFF * * - OFF</Instance>
+				   <ProbTable>1 1 1</ProbTable>
+			  </Entry>
+			  <Entry>
+			  		<Instance>a_ON * * LOCK LOCK </Instance>
+			  		<ProbTable> 1 </ProbTable>
+			  </Entry>
+			  """
+# For each GPS_stat / LT combination
+
+for i in range(LT_min,LT_max+1):
+	lock_LT_GPSstat_probtable = "";
+	on_LT_GPSstat_probtable = "";
+	for j in range(GPSstat_min,GPSstat_max+1):
+		if(j >= i):
+			lock_LT_GPSstat_probtable += " 1 ";
+			on_LT_GPSstat_probtable += " 0 ";
+		else:
+			lock_LT_GPSstat_probtable += " 0 ";
+			on_LT_GPSstat_probtable += " 1 ";
+	GPS_trans += """
+			<Entry>
+				<Instance> a_ON """+"LT_"+repr(i) + """ - ON LOCK </Instance>
+				<ProbTable>""" + lock_LT_GPSstat_probtable + """</ProbTable>
+			</Entry>
+			<Entry>
+				<Instance> a_ON """+"LT_"+repr(i) + """ - ON ON </Instance>
+				<ProbTable>""" + on_LT_GPSstat_probtable + """</ProbTable>
+			</Entry>"""
+
+GPS_trans += """			  
+		  </Parameter>
+	  </CondProb>"""
+
+'''WRITE REWARD FUNCTION'''
+Pr_reward = "";
+for i in range(Pr_min,Pr_max+1):
+	Pr_reward += " " + repr(Pr_max - i);
+reward_func = """  
+
+  <RewardFunction>
+  <Func>
+  <Var>reward_agent</Var>
+  <Parent>Pr_prev GPS_prev</Parent>
+  <Parameter type="TBL">
+  <Entry>
+  <Instance>* ON </Instance>
+  <ValueTable> -10.0 </ValueTable></Entry>
+  <Entry>
+  <Instance> - LOCK  </Instance>
+  <ValueTable>""" +  Pr_reward + """</ValueTable></Entry>
+  </Parameter>
+  </Func>
+  </RewardFunction>"""
 
 		
 header = """<?xml version="1.0" ?><pomdpx id="autogenerated" version="0.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="pomdpx.xsd">
@@ -237,7 +298,7 @@ xmlStr= (header + """
 </StateVar>
 
 <StateVar fullyObs="true" vnameCurr="GPS_now" vnamePrev="GPS_prev">
-<ValueEnum>ON OFF LOCK</ValueEnum>
+<ValueEnum>""" + GPS_enum + """</ValueEnum>
 </StateVar>
 
 <StateVar vnameCurr="LT_now" vnamePrev="LT_prev">
@@ -250,6 +311,7 @@ xmlStr= (header + """
 
 <ActionVar vname="action_agent">
 <ValueEnum>a_ON a_OFF</ValueEnum>
+
 </ActionVar>
 <RewardVar vname="reward_agent"/>
 </Variable>
@@ -312,57 +374,16 @@ xmlStr= (header + """
 """ + Pr_trans + """
 """ + GPSstat_trans + """
 """ + LT_trans + """
-      <CondProb>
-          <Var>GPS_now</Var>
-          <Parent>action_agent GPS_prev </Parent>
-          <Parameter type = "TBL">
-              <Entry>
-                   <Instance>a_ON ON ON</Instance>
-                   <ProbTable>1</ProbTable>
-              </Entry>
-              <Entry>
-                   <Instance>a_ON OFF ON</Instance>
-                   <ProbTable>1</ProbTable>
-              </Entry>
-              <Entry>
-                   <Instance>a_OFF OFF OFF</Instance>
-                   <ProbTable>1</ProbTable>
-              </Entry>
-              <Entry>
-                   <Instance>a_OFF ON OFF</Instance>
-                   <ProbTable>1</ProbTable>
-              </Entry>
-              <Entry>
-              		<Instance>a_ON LOCK - </Instance>
-              		<ProbTable>0.5 0 0.5</ProbTable>
-              </Entry>
-              <Entry>
-                    <Instance>a_OFF LOCK  - </Instance>
-                    <ProbTable>0 1 0</ProbTable>
-              </Entry>
-          </Parameter>
-      </CondProb>
- </StateTransitionFunction>
+""" + GPS_trans + """
+</StateTransitionFunction>
  
  <ObsFunction>"""
  + LT_obs_func +
  """</ObsFunction>
 
- <RewardFunction>
+""" + reward_func + """
   
-  <Func>
-  <Var>reward_agent</Var>
-  <Parent>action_agent Pr_prev</Parent>
-  <Parameter type="TBL">
-  <Entry>
-  <Instance>a_ON Pr1 </Instance>
-  <ValueTable> 1.0 </ValueTable></Entry>
-  <Entry>
-  <Instance>a_OFF *  </Instance>
-  <ValueTable> 0.0 </ValueTable></Entry>
-  </Parameter>
-  </Func>
-  </RewardFunction></pomdpx>
+  </pomdpx>
 
 	"""	);
 
