@@ -1,5 +1,6 @@
 #import numpy as np;
 import random as rnd;
+import pickle;
 validDirs = ("pn","pne","pe","pse","ps","psw","pw","pnw","p0");
 validCross = ("pn","pe","ps","pw");
 validDiag = ("pne","pse","psw","pnw");
@@ -14,8 +15,7 @@ validMoves = {
 				"pw" : ("pn","pne","pe","pse","ps"),
 				"pnw" : ("pe","pse","ps")
 				}; 
-ltMAX=5;
-ltMIN=0;
+
 resProb = 0.55;
 class AreaPoint:
 	
@@ -23,7 +23,7 @@ class AreaPoint:
 		self.x = x;
 		self.y = y;
 		self.res = res;
-		self.pr = {"pn":0,"pne":0,"pe":0,"pse":0,"ps":0,"pse":0,"ps":0,"psw":0,"pw":0,"pnw":0};
+		self.pc_trans = {"pn":0,"pne":0,"pe":0,"pse":0,"ps":0,"pse":0,"ps":0,"psw":0,"pw":0,"pnw":0};
 		self.lt = lt;
 		if(res == True):
 			self.set_res(edge);
@@ -34,42 +34,42 @@ class AreaPoint:
 		self.set_zero();
 		if(edge == False):
 			for allowed in validDirs:
-				self.pr[allowed] = 1.0/9;
+				self.pc_trans[allowed] = 1.0/9;
 		elif(edge in validCross):
 			for allowed in validMoves[edge]:
-				self.pr[allowed] = 1.0/6;
-				self.pr["p0"] = 1.0/6;
+				self.pc_trans[allowed] = 1.0/6;
+				self.pc_trans["p0"] = 1.0/6;
 		elif(edge in validDiag):
 			for allowed in validMoves[edge]:
-				self.pr[allowed] = 1.0/4;
-				self.pr["p0"] = 1.0/4;
+				self.pc_trans[allowed] = 1.0/4;
+				self.pc_trans["p0"] = 1.0/4;
 					
 	def set_res(self,edge):
 		self.set_zero();
 		self.res = True;
 		if(edge == False):
 			for allowed in validDirs:
-				self.pr[allowed] = (1-resProb)/8;
-			self.pr["p0"] = resProb;
+				self.pc_trans[allowed] = (1-resProb)/8;
+			self.pc_trans["p0"] = resProb;
 			
 		elif(edge in validCross):
 			for allowed in validMoves[edge]:
-				self.pr[allowed] = (1-resProb)/5;
-			self.pr["p0"] = resProb;
+				self.pc_trans[allowed] = (1-resProb)/5;
+			self.pc_trans["p0"] = resProb;
 			
 		elif(edge in validDiag):
 			for allowed in validMoves[edge]:
-				self.pr[allowed] = (1-resProb)/3;
-			self.pr["p0"] = resProb;
+				self.pc_trans[allowed] = (1-resProb)/3;
+			self.pc_trans["p0"] = resProb;
 	
 	def set_zero(self):
 		for i in validDirs:
-			self.pr[i] = 0;
+			self.pc_trans[i] = 0;
 		
 	def is_valid(self):
 		sump = 0;
 		for i in validDirs:
-			sump += self.pr[i];
+			sump += self.pc_trans[i];
 		if(sump == 1):
 			return True;
 		else:
@@ -79,15 +79,17 @@ class AreaPoint:
 		self.lt = lt;
 	
 	def __str__(self):
-		return "PR: " + self.pr.__str__() + " LT: " + repr(self.lt);
+		return "PR: " + self.pc_trans.__str__() + " LT: " + repr(self.lt);
 	
 
 class Area:
 		
-	def __init__(self,xdim,ydim):
+	def __init__(self,xdim,ydim,ltmax):
 		self.points = {};
 		self.xdim = xdim;
 		self.ydim = ydim;
+		self.ltMAX = ltmax;
+		self.ltMIN = 0;
 		for i in range(0,xdim):
 			for j in range(0,ydim):
 				if(i == 0):
@@ -100,7 +102,7 @@ class Area:
 					self.points[i,j] = AreaPoint(i,j,False,"pn",0);
 				else:
 					self.points[i,j] = AreaPoint(i,j,False,False,0);
-				self.points[i,j].lt = rnd.randint(0,ltMAX);
+				self.points[i,j].lt = rnd.randint(0,self.ltMAX);
 				
 		self.points[0,0].set_even("psw");
 		self.points[0,ydim-1].set_even("pnw");
@@ -203,7 +205,7 @@ class Area:
 #		totalCells = (2*Pr + 1) ** 2;
 		totalCells = self.get_numcells_pr(x,y,Pr);
 		prSum = 0;
-		for lt_val in range(ltMIN,ltMAX+1): # For each value of LT
+		for lt_val in range(self.ltMIN,self.ltMAX+1): # For each value of LT
 			lt_sum = 0;
 			for i in range(x - Pr, x + Pr+1):
 				for j in range(y - Pr, y + Pr+1): # For each position
@@ -215,7 +217,7 @@ class Area:
 							#print "at " +repr(i) + " " + repr(j) + ": " + repr(lt_val);
 							lt_sum += 1;
 			outDic[lt_val] = float(lt_sum)/totalCells ;
-			if(lt_val < ltMAX):
+			if(lt_val < self.ltMAX):
 				prStr += repr(outDic[lt_val]) + " ";
 			else:
 				prStr += repr(outDic[lt_val]); 
@@ -225,11 +227,23 @@ class Area:
 		outDic["PrStr"] = prStr;
 		return outDic;
 	
-		
 	
 	
-def make_ten():
-	a = Area(10,10);
+def write_out(obj,filename):
+	with open(filename, 'wb') as outstream:
+			pickle.dump(obj, outstream, pickle.HIGHEST_PROTOCOL)
+
+def read_in(filename):
+	with open(filename, 'rb') as instream:
+			obj = pickle.load(instream);
+			return obj;
+
+
+
+	
+	
+def make_ten(ltmax):
+	a = Area(10,10,ltmax);
 	a[6,1].set_res(False);
 	a[2,7].set_res(False);
 	return a;

@@ -11,7 +11,16 @@ def np_toStr(fArr) :
 
 ## Generate 'land' map of transition probs
 
-myLand = a.make_ten();
+
+## Define ranges of states
+Pr_min = 0; #lowest possible error 0 means we are 100% certain of Pc
+Pr_max = 3# myLand.xdim ; #largest possible error
+GPSstat_max = 3; # Max time we can record before GPS gets a lock
+GPSstat_min = -3; # Min locking time 1 -> 1 timestep from action_on
+LT_min = 0;
+LT_max = GPSstat_max;
+
+myLand = a.make_ten(LT_max);
 print myLand;
 print "Pc Range " + "x: " + repr(myLand.xdim) + " y: " + repr(myLand.ydim);
 ## Write Pc stuff (mean location)
@@ -31,11 +40,11 @@ for i in range(myLand.xdim):
 		for dirn in a.validDirs:
 			adj = myLand.get_neighbour(i, j, dirn);
 			if(myLand.is_outside(adj[0],adj[1]) == False):
-				fsum += float(repr(myLand[i,j].pr[dirn]));
+				fsum += float(repr(myLand[i,j].pc_trans[dirn]));
 				Pc_trans += """
 				<Entry>
 				<Instance>"""+"Pc"+repr(i)+"_"+repr(j)+" Pc"+repr(adj[0])+"_"+repr(adj[1])+""" </Instance> 
-				<ProbTable>""" + repr(myLand[i,j].pr[dirn]) + """</ProbTable>
+				<ProbTable>""" + repr(myLand[i,j].pc_trans[dirn]) + """</ProbTable>
 				</Entry>
 				"""
 		#if(fsum != 1):
@@ -46,8 +55,7 @@ Pc_trans += """</Parameter>
 ## Write Pr stuff (mean error) ########################
 '''
 
-Pr_min = 0; #lowest possible error 0 means we are 100% certain of Pc
-Pr_max = 5# myLand.xdim ; #largest possible error
+
 Pr_enum = "";
 print "Pr Range: " + repr(Pr_min) + " to " + repr(Pr_max);
 Pr_trans = """
@@ -96,8 +104,7 @@ GPSstat_trans = """
 		<Parent>GPS_prev GPSstat_prev </Parent>
 		<Parameter type = "TBL">
 """;
-GPSstat_max = 5; # Max time we can record before GPS gets a lock
-GPSstat_min = -5; # Min locking time 1 -> 1 timestep from action_on
+
 print "GPSstat range: " + repr(GPSstat_min) + " to " + repr(GPSstat_max); 
 for i in range(GPSstat_min,GPSstat_max + 1):
 	GPSstat_enum += ' GPSstat_' + repr(i) + ' ';
@@ -141,10 +148,9 @@ GPSstat_trans += """</Parameter>
 					</CondProb>""";
 
 ''' DEFINE TRANSITION FOR LT '''
-LT_enum = "";
+LT_enum = "LT_none"; # place holder so obs matches un obs
 LT_obs_enum = "oLT_none ";
-LT_min = 0;
-LT_max = GPSstat_max;
+
 print "LT range: " + repr(LT_min) + " to " + repr(LT_max);
 for i in range(LT_min,LT_max+1):
 	LT_enum += " LT_"+repr(i)+" ";
@@ -164,7 +170,11 @@ for i in range(myLand.xdim):
 				<ProbTable> 1 </ProbTable>
 				</Entry>
 				""";
-LT_trans += """</Parameter>
+LT_trans += """ <Entry>
+				<Instance> * LT_none </Instance>
+				<ProbTable> 0 </ProbTable>
+				</Entry>
+				</Parameter>
 			   </CondProb>""";
 
 
@@ -211,10 +221,6 @@ GPS_trans = """
 		  <Parent>action_agent LT_prev GPSstat_prev GPS_prev  </Parent>
 		  <Parameter type = "TBL">
 			  <Entry>
-				   <Instance>a_ON * * ON ON</Instance>
-				   <ProbTable>1</ProbTable>
-			  </Entry>
-			  <Entry>
 				   <Instance>a_ON * * OFF ON</Instance>
 				   <ProbTable>1</ProbTable>
 			  </Entry>
@@ -224,6 +230,10 @@ GPS_trans = """
 			  </Entry>
 			  <Entry>
 			  		<Instance>a_ON * * LOCK LOCK </Instance>
+			  		<ProbTable> 1 </ProbTable>
+			  </Entry>
+			  <Entry>
+			  		<Instance>a_ON LT_none * ON ON </Instance>
 			  		<ProbTable> 1 </ProbTable>
 			  </Entry>
 			  """
@@ -256,20 +266,20 @@ GPS_trans += """
 '''WRITE REWARD FUNCTION'''
 Pr_reward = "";
 for i in range(Pr_min,Pr_max+1):
-	Pr_reward += " " + repr(Pr_max - i);
+	Pr_reward += " " + repr(-2*(i+1));
 reward_func = """  
 
   <RewardFunction>
   <Func>
   <Var>reward_agent</Var>
-  <Parent>Pr_prev GPS_prev</Parent>
+  <Parent>action_agent Pr_prev </Parent>
   <Parameter type="TBL">
   <Entry>
-  <Instance>* ON </Instance>
-  <ValueTable> -10.0 </ValueTable></Entry>
-  <Entry>
-  <Instance> - LOCK  </Instance>
+  <Instance> * - </Instance>
   <ValueTable>""" +  Pr_reward + """</ValueTable></Entry>
+  <Entry>
+  <Instance> a_ON * </Instance>
+  <ValueTable> """ + repr(-4 * (Pr_max/2)) + """</ValueTable></Entry>
   </Parameter>
   </Func>
   </RewardFunction>"""
